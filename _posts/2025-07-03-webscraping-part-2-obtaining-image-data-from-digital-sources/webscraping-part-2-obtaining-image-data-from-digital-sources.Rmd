@@ -1,0 +1,249 @@
+---
+title: "Webscraping Part 2: Obtaining Image Data from Digital Sources"
+description: |
+  Web scraping images and an investigation into the success of the MCU!
+author:
+  - name: Natasha Munn 
+date: 07-21-2024
+output:
+  distill::distill_article:
+    self_contained: false
+    code_folding: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Welcome to Part 2 of experimenting with web scraping! In the last post, I was scraping text, specifically government ministers' release titles and content on the Beehive website. For this next part, I will be working with **images!**
+
+First, let's load **tidyverse, rvest, and magick.**
+
+```{r}
+library(tidyverse)
+library(rvest)
+library(magick)
+
+```
+
+Today's data context will be the *Marvel Cinematic Universe* There has been a lot of discourse recently about the success of the MCU and whether their films are having as much success as they used to, so let's investigate this.
+
+The first thing I wanted to investigate was the **viewer's opinion** of the films. Later, we will look into the actual box office data. Using the same web scraping method as my last post, I scraped the [***Rotten Tomatoes***](https://editorial.rottentomatoes.com/guide/all-marvel-cinematic-universe-movies-ranked/) website (which I checked the terms and conditions and robots.txt file for) to get data on each MCU film's release year and Rotten Tomatoes meter score. Then, I put this information into the data frame **rotten_data**.
+
+I did not use the **get_release** function this time with system sleep because I will only be scraping one webpage rather than multiple web pages from a single website. We should be fine since I will only be scraping the page once to get all of my information.
+
+```{r}
+
+# ROTTEN TOMATOES DATA
+
+rotten_tomatoes <- "https://editorial.rottentomatoes.com/guide/all-marvel-cinematic-universe-movies-ranked/"
+
+marvel_films <- read_html(rotten_tomatoes)
+
+movie_title <- marvel_films %>%
+  html_elements(".article_movie_title") %>%
+  html_elements("h2") %>%
+  html_elements("a") %>%
+  html_text2()
+
+year_released <- marvel_films %>%
+  html_elements(".start-year") %>%
+  html_text2() 
+
+meter_score <- marvel_films %>%
+  html_elements(".tMeterScore") %>%
+  html_text2()
+
+rotten_data <- tibble(movie_title, year_released, meter_score)
+
+print(rotten_data)
+
+```
+
+Next, I wanted to clean up the data in preparation for the types of visualisations I wanted to make. When looking at the **rotten_data**, we can see that since the data was scraped from text, it has been outputted as *character* variables. This makes it more difficult to display the data on a numerical scale in our ggplots because R will read every meter score as a new category. To fix this, I used the **str_sub** function in combination with **parse_number** to mutate new versions of year_released and meter_score that are read as numbers. Now, our cleaned data is looking ready for analysis!
+
+
+```{r}
+
+# CLEANING THE DATA
+
+cleaned_data <- rotten_data %>%
+  mutate(year_released = year_released %>% str_sub(1, 5) %>% parse_number()) %>%
+    mutate(meter_score = meter_score %>% str_sub(1, 2) %>% parse_number()) %>%
+ mutate(phase = ifelse(year_released > 2018,
+                                "Post-Endgame",
+                                "Pre-Endgame")) 
+
+print(cleaned_data)
+
+```
+
+The next step was to combine this data with some images we will get using web scraping! To scrape an image rather than text, we have to look for what we want under an element, such as the class name, and search for the *source* to give us the image's URL.
+
+```{r}
+
+# FILM POSTERS VS CRITICS SCORE
+posters <- read_html(rotten_tomatoes) %>%
+  html_elements(".article_poster") %>%
+  html_attr("src") 
+
+```
+
+Now, we have a data object of MCU poster URLs.  Using a technique similar to my magick image in my Google Forms project, I used the **paste** function to paste the meter_score of each film from the rotten_data into a gif. This gif will read images from the poster object we created to create a cycling gif of each marvel movie poster accompanied by their rotten tomatoes meter score.
+
+```{r}
+
+# ANIMATED GIF
+
+paste <- paste(rotten_data$meter_score) 
+
+poster_gif <- image_read(posters) %>%
+  image_join() %>%
+  image_scale(400) %>%
+  image_annotate(paste, size = 20, gravity = "center", font = "Impact", color = "white", boxcolor = "black") %>%
+  image_animate(fps = 0.8) 
+
+poster_gif
+
+```
+
+Looking awesome! Now it’s time for some analysis! We will bring back the cleaned data set from earlier to display our data.
+
+```{r}
+
+# AUDIENCE SCORE PRE AND POST ENDGAME
+
+ggplot(data = cleaned_data) +
+    geom_density(aes(x = meter_score,
+                   fill = phase,
+                   alpha = 0.7))  +
+
+
+  labs(title = "Is Marvel dying after the Infinity Saga?",
+       subtitle = "An analysis of audience opinion pre and post Avergers: Endgame",
+       x = "Audience Meter Score (%)",
+       caption = "Source: Natasha Munn 2024",
+       fill = "Movie Release") +
+  
+  scale_alpha(guide = 'none') +
+  
+  scale_fill_manual(values = c("#1538C8", "#992C26")) +
+
+
+theme_classic () +
+  
+  theme(panel.background = element_rect(fill = "#F4ECEC"),
+    plot.background = element_rect(fill = "#F4ECEC"),
+    legend.background = element_rect(fill = "#F4ECEC"),
+    legend.box.background = element_rect(fill = "#F4ECEC"),
+    axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.title.y = element_blank()) 
+
+```
+
+As we can see, there is a significant shift in the weighting of meter score for movies before the release of Avengers: Endgame compared to after. The meter score for movies released Pre-Endgame peaks strongly at around 90%, while the Post-Endgame data lacks any distinct shape or trend. While there is a slightly rounded point at the 80-85% mark, the data has much more variation and is pulled down by the 50-60% meter scores.
+
+It is essential to mention that we have more films in the Pre-Endgame group compared to the Post-Endgame group. This is because the Infinity Saga only ended in 2019, so we have a bit of catching up to do before we can evaluate the full effect of Marvel’s Post-Endgame slump. However, it is safe to say that the last five years of Marvel content still fails to compete with the impressive collection of films that came before it.
+
+```{r}
+
+# AUDIENCE SCORE V.S. YEAR RELEASED
+
+ggplot(data = cleaned_data) +
+    geom_smooth(aes(x = year_released,
+                   y = meter_score))  +
+  
+geom_point(data = cleaned_data,
+            aes(x = year_released, y = meter_score),
+            colour = "#992C26",
+             size = 2,
+             shape = 20) +
+
+  
+    labs(title = "Do we still like Marvel Movies?",
+       subtitle = "A glimpse into audience meter scores over the years",
+       x = "Year Released",
+       y = "Audience Meter Score (%)",
+       caption = "Source: Natasha Munn 2024") + 
+  
+
+theme_classic () +
+  
+  theme(panel.background = element_rect(fill = "#F4ECEC"),
+    plot.background = element_rect(fill = "#F4ECEC"),
+    legend.background = element_rect(fill = "#F4ECEC"),
+    legend.box.background = element_rect(fill = "#F4ECEC")) 
+
+```
+
+
+```{r}
+
+# BOX OFFICE DATA
+url <- "https://docs.google.com/spreadsheets/d/e/2PACX-1vSY_etLgncoCxuo7tk289mOko6vroraHNIkeLHTny8UirK628SUEwWXkHC_Hw80qKr1GImUrPLxGfN3/pub?output=csv"
+
+box_office_data <- read_csv(url) %>%
+  rename(worldwide_gross_mil = 4,
+         budget_recovered_percent = 5,
+         critic_score_percent = 6,
+         audience_score_percent = 7,
+         audience_critic_percent_deviance = 8,
+         domestic_grossmil = 10,
+         int_gross_mil = 11,
+         opening_weekend_mil = 12,
+         second_weekend_mil = 13,
+         firstvssecond_weekend_dropoff = 14,
+         opening_weekend_gross_percent = 15,
+         domestic_gross_percent = 16,
+         int_gross_percent = 17,
+         budget_opening_weekend_percent = 18) %>%
+  arrange(critic_score_percent)
+
+```
+
+This data set gives us a ton of helpful information to choose from! I’ll focus on the worldwide gross at the box office and compare this to the superhero franchise to which the film is attached. Then, we can better understand who audiences are more likely to pay to see in the MCU and perhaps get an idea of who audiences would like to see more of in the future.
+
+```{r}
+
+# BOX OFFICE BY SUPERHERO
+
+box_office_plot <- ggplot(box_office_data) +
+  geom_col(aes(y = category,
+               x = worldwide_gross_mil,
+                fill = category))  +
+  
+  scale_fill_manual(
+    values = c("Ant-Man" = "#EBCA24",
+            "Captain America"    = "#496BE0",
+            "Avengers" = "#05588A",
+            "Spider-Man" = "#E50A0A",
+            "Unique" = "#458A05",
+            "Thor" = "#E59C0A",
+            "Black Panther" = "black",
+            "Dr Strange" = "#45046F",
+            "Iron Man" = "#E05249",
+            "Deadpool" = "#6E0707",
+            "Guardians" = "#8F0AE5")) +
+
+  
+
+  labs(title = "Who's your favourite superhero?",
+       subtitle = "What Marvel franchise is making the most at the box office??",
+       x = "Worldwide Gross (millions)") +
+    
+theme_classic () +
+  
+  theme(panel.background = element_rect(fill = "#F4ECEC"),
+    plot.background = element_rect(fill = "#F4ECEC"),
+        axis.ticks.y = element_blank(),
+        axis.title.y = element_blank(),
+        legend.position = "none")
+
+box_office_plot
+
+```
+
+Well, it is clear that we give the Avengers films the most love in the cinema! The Spiderman franchise is another fond favourite of ours. Perhaps these are the superhero films that Marvel fans want to see more of in the next phase of the MCU because they are clearly guaranteed box-office success!
+
+This has been my favourite project to work on so far! The data context was so fun, and I can't wait to explore more in the future!

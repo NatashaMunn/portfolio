@@ -1,0 +1,137 @@
+---
+title: "Tracking Habits: An analysis on respondents screen time"
+description: |
+  Analyzing data using a combination of Google Forms, Google Sheets and R Studio.
+author:
+  - name: Natasha Munn 
+date: 07-07-2024
+output:
+  distill::distill_article:
+    self_contained: false
+    code_folding: true
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+I love a good Google Form. Therefore, it would be fun to gather data using Forms, analyse it on R Studio and see what we can learn!
+
+Today, I am investigating device use and screen time to explore the differences in my respondent's screen time habits (*i.e., time spent, devices most used, applications most used*).
+
+My first step was to create my form. It is vital to consider data ethics when collecting information, so I communicated my purpose to my respondents in my form description. I also clearly stated who was collecting the data, who would have access to the data, and what the data would be used for. I also communicated that their responses would be anonymous and that the only additional identifiable information would be collected would be the date and time they submitted the form. 
+
+I phrased my questions for the respondent only to measure their screen time habits of the last week or ask them to answer the question based on their current stance. I asked the following questions:
+
+1. Which age category best describes you?
+2. Which of the following devices do you use on a regular basis? (at least once a week)
+3. Out of the following list of devices, which one did you use the most in the last week?
+4. In the last week, how many hours of screen time did you spend in total? 
+5. Which platform has taken up the most of your screen time in the last week? 
+6. Are you currently employed
+7. (if yes to Q6) Is working on a device with a screen an essential part of your job on a weekly basis?
+8. In the last week, how many nights have you used a device with a screen directly before bed?
+
+Now, let's start investigating. First, we need to load **tidyverse**, as well as the **magick** package for a special surprise later on:)
+
+```{r}
+library(tidyverse)
+library(magick)
+```
+
+I connected my form to a Google Sheet, which I then published as a CSV file. Then, I used the **read_csv** function to put my data into a data frame called **learning_data**. This is the data I will be working with:
+
+```{r}
+# EXTRACTING THE DATA AND CREATING OUR DATAFRAME
+
+url <- "https://docs.google.com/spreadsheets/d/e/2PACX-1vRQwki3G6AX9G_3qA-1WBiqXv9wkwXvSLyRsozFDRDu-xAdsimASsZmvAOtt9AAYd1yN926MftmsZrn/pub?gid=147013883&single=true&output=csv"
+
+# rename data variables
+learning_data <- read_csv(url) %>%
+  rename(time = 1,
+       age = 2,
+       devices_used = 3,
+       most_common_device = 4,
+       screen_time = 5,
+       most_common_platform = 6,
+       job = 7,
+       device_job = 8,
+       screen_bed = 9)
+
+print(learning_data)
+```
+
+First, I discovered that **mobile phones** are the most used devices, primarily used by the 18-25 age group. We can also see the only person to consider an e-reader their most common device was in the **66 and over** age group.
+
+```{r}
+
+# box plot 1: age v.s. most common device
+
+ggplot(data = learning_data) +
+  geom_bar(aes(y = most_common_device, fill = age)) +
+  labs(title = "Does age change our preference?",
+       subtitle = "Comparing the most common device used in different age groups",
+       caption = "Source: Natasha Munn 2024",
+       x = "Count",
+       y = "Device Type") +
+  
+   theme(panel.background = element_rect(fill = "#F4ECEC"),
+    plot.background = element_rect(fill = "#F4ECEC"),
+    legend.background = element_rect(fill = "#F4ECEC"),
+    legend.box.background = element_rect(fill = "#F4ECEC"))
+
+```
+
+Another aspect of the data I was interested in was the question of screen time before bed, as it is when most people are vulnerable to doom scrolling. I discovered that most respondents are on their screens before bed every night! 
+
+```{r}
+
+# box plot 2: age v.s. days of screen time before bed
+
+ggplot(data = learning_data) +
+  geom_bar(aes(x = screen_bed, fill = age)) +
+  labs(title = "Who's on their phone the most at bedtime?",
+       subtitle = "Comparing the differences in screen use before bed for different ages",
+       caption = "Source: Natasha Munn 2024",
+       x = "Days of screentime before bed",
+       y = "Count") +
+
+ theme(panel.background = element_rect(fill = "#F4ECEC"),
+    plot.background = element_rect(fill = "#F4ECEC"),
+    axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.title.y = element_blank(),
+    legend.background = element_rect(fill = "#F4ECEC"),
+    legend.box.background = element_rect(fill = "#F4ECEC"))
+```
+
+The highest amount of total screen time amongst my respondents is *77 hours*. The mean number of days my respondents used a device before bed is *5.7 days*. Here are some more exciting finds from my exploration:
+
+* The most common platform used by my respondents last week was TikTok.
+
+* For the 16 currently employed respondents, it was more common for a device to be essential to their job on a weekly basis.
+
+* The most common device among my respondents in the last week was a mobile phone.
+
+To finish this report, I incorporated some of the **magick packages** I looked at in my last post. Check out this GIF I made celebrating my number of survey results! I used the **paste** function again to input the number of respondents from the learning data into my text. Enjoy!
+
+```{r setup, meme-code}
+
+# meme code
+
+michael <- image_read("https://content.imageresizer.com/images/memes/Michael-Scott-meme-10.jpg")
+
+paste <- paste("Me when I get", length(learning_data$time), "responses on my survey")
+
+text <- image_blank(1043, 100, color = "white") %>%
+  image_annotate(paste, size = 30, gravity = "center", font = "Impact") 
+
+
+#putting the meme together
+meme <- c(text, michael) %>%
+  image_append(stack = TRUE)
+
+meme
+
+```

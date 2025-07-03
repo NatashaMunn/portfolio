@@ -1,0 +1,139 @@
+---
+title: "Webscraping Part 1: Obtaining Text Data from Digital Sources"
+description: |
+  Web scraping text and experimenting with inline code!
+author:
+  - name: Natasha Munn 
+date: 07-18-2024
+output:
+  distill::distill_article:
+    self_contained: false
+    code_folding: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Kia ora! Today, I will be exploring a method of data collection that is new to me and that I wish to explore more: **Web scraping**. Web scraping is the automated process of copying data from a webpage to store it in a database. It is vital to do this ethically. Just because information is online does not make it ours to scrape at will. 
+
+There are two main methods for checking if a website is scrapable. One is by checking the Iterms and conditions*. You want to ensure there is nothing against the use of robots or anything against using an automated process to collect data.
+
+You also want to check the website’s *robots.txt file* and carefully read what URLs are allowed and disallowed to be scraped.
+
+To accomplish web scrapping, I first need to load the **tidyverse** and **rvest** libraries.
+
+```{r}
+
+library(tidyverse)
+library(rvest)
+
+```
+
+For this project, I will be scrapping information from the official [***Beehive Government website***](https://www.beehive.govt.nz/minister/hon-simeon-brown). As mentioned above, I checked the terms and conditions of this webpage and the robots.txt file. There is nothing in its terms and conditions against web scraping, and the robots txt file allowed for scrapping the minister's release URLs. The minister I've selected is **Hon. Simeon Brown**. These are the ideas I wanted to explore in the data:
+
+* **Word count** for both release titles and release content. How do they vary in length?
+
+* The releases have a lot of **quotation marks** from people's quotes. How often do the releases quote someone on average?
+
+* Many of the releases have the word **"government"** in them. How frequent is the word across releases?
+
+After saving the URL as an object in R Studio, I used the **read_html** function combined with **html_elements and attr** to gather information on release titles and content. I got the class information to obtain these by inspecting the webpage on Google.
+
+```{r}
+
+# SCRAPING RELEASE TITLES AND CONTEXT
+
+url <- "https://www.beehive.govt.nz/minister/hon-simeon-brown"
+
+pages <- read_html(url) %>%
+  html_elements(".release__wrapper") %>%
+  html_elements("h2") %>%
+  html_elements("a") %>%
+  html_attr("href") %>%
+  paste0("https://www.beehive.govt.nz", .)
+
+page_url <- pages[1]
+
+page <- read_html(page_url)
+
+release_title <- page %>%
+  html_elements(".article__title") %>%
+  html_text2()
+
+release_content <- page %>%
+  html_elements(".prose") %>%
+  html_text2()
+
+```
+
+Then I created a function called **get_release** in which I web scrape each page-URL for all of the HTML elements under the class name **.article_title** and **.prose** to be returned in a tibble table under the variables release_title and release_content. I will call this my release data.
+
+Remember that it's essential to add a **sys.sleep** into your code when web scrapping to give the website breaks between scraps to avoid any crashes.
+
+```{r}
+
+# GET RELEASE
+
+get_release <- function(page_url){
+  Sys.sleep(2)
+  print(page_url)
+  page <- read_html(page_url)
+  
+  release_title <- page %>%
+    html_elements(".article__title") %>%
+    html_text2()
+  
+  release_content <- page %>%
+    html_elements(".prose") %>%
+    html_text2()
+  
+return(tibble(release_title, release_content))  
+}
+
+release_data <- map_df(pages, get_release)
+
+```
+
+Now, I have the data frame release data to play around with to help me answer my questions. I used the **mutate** function from tidyverse to turn my questions into answers and created a data object for each one. 
+
+The benefit of putting these values as objects is that you can use them for **inline R code** when writing your summaries, for example. The following summary is written using inline code to showcase the release features.
+
+```{r}
+
+# INLINE CODE
+
+mean_title_length <- release_data %>%
+  mutate(title_length = str_count(release_title, "\\S+")) %>%
+  pull(title_length) %>%
+  mean() %>%
+  round(0)
+
+mean_content_length <- release_data %>%
+  mutate(content_length = str_count(release_content, "\\S+")) %>%
+  pull(content_length) %>%
+  mean() %>%
+  round(0)
+
+total_government_mention <- release_data %>%
+  mutate(content_lowercase = str_to_lower(release_content)) %>% 
+  mutate(government_mention = str_count(content_lowercase, "government")) %>%
+  pull(government_mention) %>%
+  sum %>%
+  round(0)
+
+mean_quotes <- release_data %>%
+  mutate(num_quotes = str_count(release_content, "“")) %>%
+  pull(num_quotes) %>%
+  mean() %>%
+  round(0)
+
+```
+
+The first feature I investigated was the release title. I was interested in how the titles varied, and I discovered that the mean word length across the titles was `r mean_title_length` words. Moving onto the release content, I wanted to figure out the same thing but for the content word count. I discovered that the mean word length across the releases was `r mean_content_length` words.
+
+Then, I wanted to get more specific. When glaring over the releases, I noticed the word government featured a lot, understandably, and I wondered how often it appeared across the releases. I found out that the word "government" featured `r total_government_mention` times across the releases. I also noticed that many quotes were featured in the releases, so I coded to detect the number of opening quotations the releases had (I only coded to detect opening quotations because I knew that for every opening quotation, there would be a closing quotation.) I discovered that the mean number of quotes across the releases was `r mean_quotes` quotes.
+
+Using inline code is a great way to produce summary statistics when working with web scrapping, as it allows for changes and updates in the data. Every time you scrape your webpage, you may get new info and inline code accounts for this, giving you the updated version every time.
+
+I will definitely be utilising web scraping more in future projects because it is such an exciting tool to use. In this post I only focused on scraping text from a webpage. I will be splitting this post into two parts and I will focus on scraping images in part 2, so keep an eye out!

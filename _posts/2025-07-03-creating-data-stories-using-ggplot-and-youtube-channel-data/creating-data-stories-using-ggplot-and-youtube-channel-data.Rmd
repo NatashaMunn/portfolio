@@ -1,0 +1,263 @@
+---
+title: "Creating Data Stories using Ggplot and YouTube Channel Data"
+description: |
+  Visualising comparisons between two YouTube channels from data obtained from the YouTube API.
+author:
+  - name: Natasha Munn 
+date: 07-13-2024
+output:
+  distill::distill_article:
+    self_contained: false
+    code_folding: true
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Kia Ora! Today I will explore YouTube channel data using the YouTube API via [***Apps Script***](https://script.google.com/u/1/home/start), create visualisations, and turn them into a dynamic and informative data story we can showcase. Let’s get started!
+
+This project will use functions from the **tidyverse** and **magick** packages.
+
+```{r}
+library(tidyverse)
+library(magick)
+```
+
+The two channels I chose to investigate were *@cut* and *@jack_edwards*, which are both channels that I watch regularly. I chose them because I knew they had a large number of videos published on their channels, and both have been posting videos for at least a couple of years *(@jack_adwards for four years and @cut for ten years)*, so I thought their channels would be good to examine data over time.
+
+Before I accessed the YouTube data, I had two ideas: to make a visualisation that examined video engagement *(e.g., likes, views, comments)* and a visualisation that examined a feature of the video title. Both of these ideas would be interesting to compare data between the two YouTube channels, as one channel may title its videos differently or have greater user engagement.
+
+In the end, I decided to start with overall habits and focus on using the data from each channel as one whole piece of YouTube data for the first plot, then go deeper and compare the two channels and their specific features.
+
+It’s time to obtain my data from the Youtube API, which I did by imputing the channel’s ID numbers. I collected *200* rows of data *(100 from each channel)*. After running this, I outputted my data as a Google Sheet. I published this as a CSV to read into R Studio and manipulate.
+
+```{r}
+
+# API to CSV
+
+youtube_data <- read_csv("https://docs.google.com/spreadsheets/d/e/2PACX-1vRZU1fILmoBM9hALzbBO1VldP-TQtsk-VOYB-bI5-asLrgK7Qn6M6LU7pgL9BxWImAr36ybX4ja_chA/pub?output=csv") %>%
+  mutate(video_length_type = ifelse(duration > 600,
+                                "long video",
+                                "short video")) %>%
+  mutate(title_length = str_count(title, " ") + 1) %>%
+  mutate(year_released = datePublished %>% str_sub(1, 4) %>% parse_number()) 
+
+```
+
+My first plot is a **geom_point** plot that investigates view count, specifically mean view count, and how it changes over time to see if we are watching more or less YouTube than we used to. I chose geom_point because I like that you can see specific dot clusters, unlike a bar chart. I initially used geom_count so you could see the distribution even more clearly, but I found it looked too messy.  Geom_point is also a good way of representing the mean views for each year.
+
+```{r}
+
+# YEAR VS MEAN VIEW COUNT 
+
+views_data <- youtube_data %>%
+  group_by(year_released) %>%
+  summarise(mean_views = mean(viewCount, na.rm = TRUE)) 
+
+plot1 <- ggplot() +
+  
+geom_point(data = youtube_data,
+            aes(x = viewCount, y = year_released)) +
+  
+  geom_point(data = views_data,
+             aes(x = mean_views, y = year_released),
+             colour = "#992C26",
+             size = 5,
+             shape = 18) +
+  
+  labs(title = "Are we watching more Youtube?",
+       subtitle = "How Youtube engagement is changing over the years",
+       x = "View Count",
+       y = "Year Posted") +
+  
+  theme_minimal() +
+  
+  scale_y_continuous(breaks = seq(2014, 2024, 1))
+  
+ggsave("plot1.png", width = 6, height = 4, units =
+         "in")
+
+
+plot1
+
+```
+
+My second plot is a **geom_density** plot examining the title length for each channel and whether or not the video duration is short or long. After looking at views for YouTube overall, looking at the titles of videos was a good next step. I chose title length to see if these channels preferred longer or shorter titles, perhaps because they think one will grab our attention more. I split them into long and short videos because I thought there might be a connection. Possibly longer videos have longer titles? I chose a density graph because it would look good visually when layering two categories (the two channel names).
+
+I initially tried to add a **vline** to this plot to portray the mean like count for each category, short and long videos, by grouping and summarising. Still, I was having issues with my code and importing this different data frame into the vline layer. Ultimately, I left it out because the two mean lines felt like they were taking away from the density plot.
+
+```{r}
+
+# TITLE LENGTH VS VIDEO LENGTH BY CHANNEL
+
+plot2 <- ggplot(youtube_data) +
+  geom_density(aes(x = title_length,
+                   fill = channelName))  +
+  
+  facet_wrap(vars(video_length_type)) +
+  
+  scale_fill_manual(values = c("#EE544D", "#992C26")) +
+  
+  
+  labs(title = "What grabs our attention in a title?",
+       subtitle = "And do longer videos tend to have longer titles?",
+       x = "Title Length") +
+  
+  theme_minimal() +
+  theme(axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.title.y = element_blank())
+
+ggsave("plot2.png", width = 6, height = 4, units =
+         "in")
+
+plot2
+
+```
+
+My final plot is a **geom_boxplot**, and I am looking at the comment count. After examining titles, I wanted to look further at the actual interactions with the video after we click on it *(comment count)*. I used a boxplot for this plot because its shape captures the data’s variation or lack thereof *(e.g., the @cut data has a wider box, while the @jack_adwards data is barely visible)*. I think the fact that you can’t see the @jack_edwards plot is statistically meaningful, as it clearly demonstrates how slight the variation for the channel’s comment count is.
+
+```{r}
+
+# COMMENTS VS. CHANNELS 
+
+comment_data <- youtube_data %>%
+  count(commentCount, channelName) 
+
+plot3 <- ggplot(comment_data) +
+  geom_boxplot(aes(x = channelName,
+               y = commentCount,
+               fill = channelName))  +
+  
+  scale_fill_manual(values = c("#EE544D", "#992C26")) +
+  
+
+  labs(title = "What channel gets the most engagement overall?",
+       subtitle = "Comparing comment count for @cut vs @jack_edwards?",
+       x = "Comment Count") +
+    
+    theme_minimal() +
+  theme(axis.text.y = element_blank(),
+             axis.ticks.y = element_blank(),
+             axis.title.y = element_blank())
+    
+plot3
+
+ggsave("plot3.png", width = 6, height = 4, units =
+         "in")
+
+```
+
+Next, I wanted a creative way to display my findings. I used the **Magick package** to turn these visualizations into a slideshow! 
+
+I used the magick package features to load the plots that I saved to my computer and wrote up some descriptions of their key features to accompany them. For more information on using the magick package functions, I recommend reading my post on manipulating images as I go into more detail about magick functions there. Here is the code for my frames. 
+
+```{r}
+
+pink_and_red_theme <- c("#F3C8C8", "#F1A4A4", "#EE544D", "#992C26")
+
+
+# DATA STORY
+
+# FRAME 1
+introduction <- "The following presentation explores the different features of videos posted on YouTube by @cut and @jack_edwards, as well as how we interact with them!" %>%
+  str_wrap(40)
+
+intro_slide <- image_blank(600, 400, color = "#F1A4A4") %>%
+  image_annotate(text = introduction,
+                size = 30, gravity = "center", color = "black", font = "Georgia")
+
+kermit <- image_read("https://static.wikia.nocookie.net/muppet/images/1/11/Kermit_on_q_radio.jpg/revision/latest?cb=20111117210116") %>%
+  image_scale(750) 
+
+
+frame1 <- c(intro_slide, kermit) %>%
+  image_append(stack = FALSE) %>%
+  image_crop("1180x380") %>%
+  image_border("#992C26", "10x10")
+
+# FRAME 2
+
+plot1 <-  image_read("plot1.png") %>%
+  image_scale("580") %>%
+  image_annotate("The highest mean view count was in 2014!", location = "+240+320", color = "black", size = 15, weight = 1000, boxcolor = "#F1A4A4", font = "Georgia")
+
+description_plot1 <- "My first visualisation examines the overall views of the YouTube videos over the past ten years and shows us that the mean view count for the channels is getting lower each year." %>%
+  str_wrap(40)
+
+plot1_slide <- image_blank(600, 400, color = "#F1A4A4") %>%
+  image_annotate(text = description_plot1, size = 30, gravity = "center", font = "Georgia")
+
+frame2 <- c(plot1, plot1_slide) %>%
+  image_append(stack = FALSE) %>%
+  image_crop("1180x380") %>%
+  image_border("#992C26", "10x10")
+
+# FRAME 3
+
+plot2 <-  image_read("plot2.png") %>%
+  image_scale("580") %>%
+  image_annotate("<- Look at that spike for @cut!", location = "+130+150", color = "black", size = 15, weight = 1000, boxcolor = "#F1A4A4", font = "Georgia")
+
+
+description_plot2 <- "My second visualisation investigates the titles of videos published by @cut and @jack_edwards by comparing the word count of their titles, and we can see that the dispersal for long videos, especially in @cut, is more varied than that of short videos." %>%
+  str_wrap(40)
+
+plot2_slide <- image_blank(600, 400, color = "#F1A4A4") %>%
+  image_annotate(text = description_plot2, size = 30, gravity = "center", font = "Georgia")
+
+frame3 <- c(plot2, plot2_slide) %>%
+  image_append(stack = FALSE) %>%
+  image_crop("1180x380") %>%
+  image_border("#992C26", "10x10")
+
+# FRAME 4
+
+plot3 <-  image_read("plot3.png") %>%
+  image_scale("580") %>%
+  image_annotate("You can barely see the distribution for @jack_edwards!", location = "+130+250", color = "black", size = 15, weight = 1000, boxcolor = "#F1A4A4", font = "Georgia")
+
+
+description_plot3 <- "In my final visualisation where I examine comment count for each channel, we can see that the engamenet for @cut is greater and much more varied compared to @jack_edwards." %>%
+  str_wrap(40)
+
+plot3_slide <- image_blank(600, 400, color = "#F1A4A4") %>%
+  image_annotate(text = description_plot3, size = 30, gravity = "center", font = "Georgia")
+
+frame4 <- c(plot3, plot3_slide) %>%
+  image_append(stack = FALSE) %>%
+  image_crop("1180x380") %>%
+  image_border("#992C26", "10x10")
+
+# FRAME 5
+
+conclusion <- "Overall, I learned that @cut's data was more varied, while @jack_edwards's data was much more clustered together. Since @jack_edwards had only been posting for 4 years, and @cut 10 years, the greater variation in 2014-2019 can be attributed to @cut, implying that their views data tends to be more varied than @jack_edwards. This story continues when examining my other two plots, with @cut having much more variation than @jack_edwards. In conclustion, I predict this variation is from @cut being a more popular channel and having more viral videos than @jack_edwards." %>%
+  str_wrap(80)
+
+frame5 <- image_blank(1200, 400, color = "#F1A4A4") %>%
+  image_annotate(text = conclusion,
+                 size = 30, gravity = "center", color = "black", font = "Georgia") %>%
+  image_crop("1180x380") %>%
+  image_border("#992C26", "10x10")
+
+```
+
+After creating each frame, I put them into a vector of frames and made a moving data story using **image_animate**. I LOVED how it turned out! Look to see the key findings of the YouTube channel data, and enjoy!
+
+```{r, layout="l-body-outset", preview=TRUE}
+
+# ANIMATION
+
+frames <- c(frame1, frame2, frame3, frame4, frame5) %>% 
+  image_animate(fps = 0.1) %>%
+  image_morph(frames = 0.5)
+
+data_story <- frames 
+
+data_story
+
+image_write(data_story, "data_story.gif")
+
+```

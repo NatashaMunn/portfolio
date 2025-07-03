@@ -1,0 +1,43 @@
+---
+title: "Period Poverty: A Global Analysis"
+description: |
+  A video investigation of the stigma surrounding period care.  
+author:
+  - name: Natasha Munn
+    url: {}
+date: 2024-06-26
+output:
+  distill::distill_article:
+    self_contained: false
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+<iframe src="https://drive.google.com/file/d/1qjHQQL-QWbavzFOrZVpSt1ctkG8jwY07/preview" width="640" height="480" allow="autoplay"></iframe>
+
+My idea to investigate period poverty came from an interest in the stigma surrounding it in society. I feel passionately about the importance of starting conversations and breaking the stigma. I want my video to act as a wake-up call for people who take their access to period care for granted.
+
+The first area I researched was the cost of periods across the globe. I considered this a good jumping-off point because it observed the problem globally and examined what I believe to be one of the most pressing issues of period poverty: *cost*.
+
+This visualisation was created using [***DataWrapper***](https://www.datawrapper.de/), which made it easy to import the data for period cost per country into a world map visualisation. This also allowed for features such as text annotations, colour legends, highlighting over hover, and interactive visualisation. Check it out!
+
+<iframe title="THE COST OF A PERIOD: A GLOBAL ANALYSIS🩸" aria-label="Map" id="datawrapper-chart-FauDC" src="https://datawrapper.dwcdn.net/FauDC/11/" scrolling="no" frameborder="0" style="width: 0; min-width: 100% !important; border: none;" height="476" data-external="1"></iframe><script type="text/javascript">!function(){"use strict";window.addEventListener("message",(function(a){if(void 0!==a.data["datawrapper-height"]){var e=document.querySelectorAll("iframe");for(var t in a.data["datawrapper-height"])for(var r=0;r<e.length;r++)if(e[r].contentWindow===a.source){var i=a.data["datawrapper-height"][t]+"px";e[r].style.height=i}}}))}();
+</script>
+
+However, I knew the topic was much deeper than just money. This brought me to ideas such as the stigma surrounding periods and the effect on young people and their education. I presented these data sets using Canva's built-in chart designs, which were extremely easy to use and manipulate!
+
+![](cost.gif)
+![](decile.gif)
+
+![](ethnicity.gif)
+
+I used [***Canva Video Editor***](https://www.canva.com/video-editor/) to create my final project, a software I am familiar with and love using for my communications projects. I was thoughtful with my editing decisions and worked hard to create something that looked professionally presented, easily understandable, and stylised well. I achieved this through simple background music, sound, animation, slide transitions, colour, and graphics. I also made sure to structure my argument thoughtfully and concisely by covering my introduction and three main topics, then ending with a conclusion and solutions to solve the problem.
+
+This was such an enjoyable project to work on. I loved combining statistical analysis with visual storytelling and communications. It proved an excellent opportunity to combine my two majors and use data and statistics in a communications setting.
+
+Overall, I hope my video educates people on this stigmatised topic of period poverty through data storytelling. Enjoy!
+
+

@@ -1,0 +1,193 @@
+---
+title: "Manipulating Images with the Magick Package"
+description: |
+  Everything Spiderman: Memes, GIFs and Movie Posters Galore!
+author:
+  - name: Natasha Munn 
+date: 07-01-2024
+output:
+  distill::distill_article:
+    self_contained: false
+    code_folding: true
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Before I start experimenting features of the **Magick Package**, let's load library magick and tidyverse.
+
+```{r}
+library(tidyverse)
+library(magick)
+```
+
+For this project, I wanted to experiment with the [***Magick Package***](https://cran.r-project.org/web/packages/magick/vignettes/intro.html) and manipulate images to create a meme. To begin, I checked out some inspiration online. Most memes comprise at least one text slide and one image slide. I have taken inspiration from the following Spiderman meme, which has two.
+
+![](inspo_meme.png)
+Now, let's start using some magick functions! To create my "*spider meme*," I used four separate slides: two for text and two for images. I used the function **image_read** for the image slides and sized them using **image_scale**. For the text slides, I used **image_black** and made text using **image_annotate** in the classic meme font!
+
+I used **image_append** to join each image to its text slide to create two rows, which I then stacked together to create the meme!
+
+```{r}
+# CREATING MEMES WITH MAGICK FUNCTIONS
+
+#cool spidey code
+coolspider <- image_read("https://wallpapers.com/images/featured/4k-spider-man-ph3fw6k03ddbmbmh.jpg") %>%
+  image_scale(800)
+
+#sad spidey code
+sadspider <- image_read("https://static0.srcdn.com/wordpress/wp-content/uploads/2022/12/tobey-maguire-as-spider-man-looking-sad-in-spider-man-3.jpg")%>%
+  image_scale(800)
+
+#first text
+text1 <- image_blank(400, 450, color = "#BD2222") %>%
+  image_annotate("Me preparing to go to uni", size = 30, gravity = "center", font = "Impact") 
+
+#second text
+text2 <- image_blank(400, 400, color = "#BD2222") %>%
+  image_annotate("Me when I actually get there", size = 30, gravity = "center", font = "Impact")
+
+#making each row
+
+#first row
+top_row <- image_append(c(text1, coolspider))
+
+#second row
+bottom_row <- image_append(c(text2, sadspider))
+
+#putting the meme together
+spidermeme <- c(top_row, bottom_row) %>%
+  image_append(stack = TRUE)
+
+#save image
+image_write(spidermeme, "spidermeme.png")
+
+spidermeme
+```
+
+Now, let's take this a step further. Not only do I want to create a *still* image. I want to explore some moving ones. Let's make some gifs!
+
+```{r}
+# CREATING ANIMATED GIFS USING MAGICK FUNCTIONS
+
+#frame 1
+spidermeme_frame1 <- spidermeme
+
+#frame 2  
+coolspider <- image_read("https://wallpapers.com/images/featured/4k-spider-man-ph3fw6k03ddbmbmh.jpg") %>%
+  image_scale(800)
+
+darkspider <- image_read("https://www.loverofsadness.net/LOS/images/gallery/main/ff/79_Spiderman%20from%20spiderman%203_unkown.jpg")%>%
+  image_crop("600x300") %>%
+  image_scale(800) 
+
+text1 <- image_blank(400, 450, color = "#BD2222") %>%
+  image_annotate("Me preparing to go to uni", size = 30, gravity = "center", font = "Impact") 
+
+text2.1 <- image_blank(400, 400, color = "#BD2222") %>%
+  image_annotate("Not understanding my lectures", size = 30, gravity = "center", font = "Impact")
+
+top_row_frame2 <- image_append(c(text1, coolspider))
+bottom_row_frame2 <- image_append(c(text2.1, darkspider))
+
+spidermeme_frame2 <- c(top_row_frame2, bottom_row_frame2) %>%
+  image_append(stack = TRUE)
+
+#frame 3
+coolspider <- image_read("https://wallpapers.com/images/featured/4k-spider-man-ph3fw6k03ddbmbmh.jpg") %>%
+  image_scale(800)
+
+cryingspider <- image_read("https://static1.srcdn.com/wordpress/wp-content/uploads/2022/11/Peter-Parker-crying-over-Gwen-Stacy-after-her-death.jpg")%>%
+  image_scale(800)
+
+text1 <- image_blank(400, 450, color = "#BD2222") %>%
+  image_annotate("Me preparing to go to uni", size = 30, gravity = "center", font = "Impact") 
+
+text2.2 <- image_blank(400, 400, color = "#BD2222") %>%
+  image_annotate("Bussing home during rushhour", size = 30, gravity = "center", font = "Impact")
+
+top_row_frame3 <- image_append(c(text1, coolspider))
+bottom_row_frame3 <- image_append(c(text2.2, cryingspider))
+
+spidermeme_frame3 <- c(top_row_frame3, bottom_row_frame3) %>%
+  image_append(stack = TRUE)
+
+#frame 4
+coolspider <- image_read("https://wallpapers.com/images/featured/4k-spider-man-ph3fw6k03ddbmbmh.jpg") %>%
+  image_scale(800)
+
+sleepspider <- image_read("https://s2.dmcdn.net/v/IpcIL1OTvnKtdwy0h/x480") %>%
+  image_scale(800)
+
+text1 <- image_blank(400, 450, color = "#BD2222") %>%
+  image_annotate("Me preparing to go to uni", size = 30, gravity = "center", font = "Impact") 
+
+text2.3 <- image_blank(400, 450, color = "#BD2222") %>%
+  image_annotate("At home trying to sleep with assingemnt due", size = 20, gravity = "center", font = "Impact")
+
+top_row_frame4 <- image_append(c(text1, coolspider))
+bottom_row_frame4 <- image_append(c(text2.3, sleepspider))
+
+spidermeme_frame4 <- c(top_row_frame4, bottom_row_frame4) %>%
+  image_append(stack = TRUE)
+```
+
+I used the same technique as last time to create a meme, but then created *multiple* versions of the meme and labeled them as different frames ( I made four frames together). I wanted these four frames to cycle through to create my animated GIF. To do this, I bound the frames together and used the **image_animate** function at 0.8 frames per second. Here is the final product!
+
+```{r}
+#creating the animation
+frames <- c(spidermeme_frame1, spidermeme_frame2, spidermeme_frame3, spidermeme_frame4)
+
+spideranimation_gif <- frames %>%
+  image_animate(fps = 0.8)
+
+image_write(spideranimation_gif, "spideranimation.gif")
+
+spideranimation_gif
+
+```
+
+It's time to get creative! Next, I wanted to do something that would make my GIF unique. I decided to combine the elements of the magick package with some handy web scrapping to create an awesome animated movie poster! To do this, I first loaded the **rvest** library.
+
+```{r}
+
+library(rvest)
+
+```
+
+Using the **read_html** function on the [***IMDB webpage***](https://www.imdb.com/title/tt0145487/taglines/?ref_=tt_stry_tg) for Spiderman (2002) taglines, I scrapped using **html_elements** to obtain all the taglines used for the film. I wanted this information to be used as the tagline for my animated poster. Then I put this data into a tibble table along with the URL of the movie poster.
+
+Then, I used the **paste** function to create a vector of the taglines that I could input into my magick image using **image_annotate** again. And voila! An animated movie poster for Spiderman!
+
+```{r}
+# GETTING CREATIVE WITH THE MAGICK PACKAGE - POSTER GIF WITH TAGLINES
+
+url <- "https://www.imdb.com/title/tt0145487/taglines/?ref_=tt_stry_tg"
+
+taglines_imdb <- read_html(url)
+
+taglines <- taglines_imdb %>%
+  html_elements(".ipc-html-content-inner-div") %>%
+  html_text2()
+
+posterurl <- "https://i.redd.it/y0rggs4i4rk41.jpg"
+
+taglines_data <- tibble(posterurl, taglines)
+
+poster <- taglines_data$posterurl %>% na.omit()
+
+paste <- paste(taglines_data$taglines) %>%
+  str_wrap(40)
+
+spider_poster <- image_read(poster) %>%
+  image_join() %>%
+  image_scale(400) %>%
+  image_annotate(paste, size = 20, gravity = "center", font = "Impact", color = "white", boxcolor = "black") %>%
+  image_animate(fps = 0.5)
+
+spider_poster
+```
+
+I had such a good time exploring features of the magick package and absolutely LOVE these creations!

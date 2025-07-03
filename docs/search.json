@@ -1,0 +1,20 @@
+{
+  "articles": [
+    {
+      "path": "about.html",
+      "title": "About",
+      "description": "Kia ora! I am a third year student at the University of Auckland majoring in Statistics and Communications. I am passionate about learning and further developing the skills I have acquired throughout my degree. ",
+      "author": [],
+      "contents": "\n\n\n\n",
+      "last_modified": "2025-07-03T21:50:09+12:00"
+    },
+    {
+      "path": "index.html",
+      "title": "Learning with Data and Digital Communications!",
+      "author": [],
+      "contents": "\n\n\n\n",
+      "last_modified": "2025-07-03T22:01:46+12:00"
+    }
+  ],
+  "collections": ["posts/posts.json"]
+}

@@ -1,0 +1,9 @@
+---
+title: "About"
+description: |
+  Kia ora! I am a third year student at the University of Auckland majoring in Statistics and Communications. I am passionate about learning and further developing the skills I have acquired throughout my degree. 
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```

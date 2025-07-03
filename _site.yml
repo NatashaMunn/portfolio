@@ -1,0 +1,13 @@
+name: "distillblog"
+title: "Natasha Munn"
+description: |
+  Learning with Data and Digital Communications
+output_dir: "docs"
+theme: theme.css
+navbar:
+  right:
+    - text: "Home"
+      href: index.html
+    - text: "About"
+      href: about.html
+output: distill::distill_article
